@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Bootstrap first task</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet"
+          href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm"
+          crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.5.0.js"></script>
+    <script>
+        let doneTask =
+            '<div class="form-check"><input class="form-check-input" type="checkbox" value="" id="status" checked disabled></div>';
+        let newTask =
+            '<div class="form-check"><input class="form-check-input" type="checkbox" value="" id="status" disabled></div>';
+
+        function loadData() {
+            if ($('#allTasks').is(':checked')) {
+                $.ajax({
+                    url: getContextPath() + '/todo',
+                    data: {action : "all"},
+                    dataType: 'json'
+                }).done(function (data) {
+                    $('#table_body').empty();
+                    $(data).each(function (index, el) {
+                        let status;
+                        let button = '';
+                        if (data[index].status === true) {
+                            status = doneTask;
+                        } else {
+                            status = newTask;
+                            button = addButtons(data[index].id);
+                        }
+                        $('#table_body').append(
+                            '<tr>' +
+                            '<td>' + data[index].id + '</td>' +
+                            '<td>' + data[index].description + '</td>' +
+                            '<td>' + data[index].created + '</td>' +
+                            '<td>' + status + '</td>' +
+                            '<td>' + button + '</td>' +
+                            '<td><i class="btn fas fa-trash-alt fa-lg long-arrow-alt-right" id="' +
+                            data[index].id + '" onclick="deleteTask(' + data[index].id +
+                            ')"></i></td>' +
+                            '</tr>'
+                        )
+                    })
+                })
+            }
+            else if ($('#newTasks').is(':checked')) {
+                $.ajax({
+                    url: getContextPath() + '/todo',
+                    data: {action : "new"},
+                    dataType: 'json'
+                }).done(function (data) {
+                    $('#table_body').empty();
+                    $(data).each(function (index, el) {
+                        let status;
+                        let button = '';
+                        if (data[index].status === true) {
+                            status = doneTask;
+                        } else {
+                            status = newTask;
+                            button = addButtons(data[index].id);
+                        }
+                        $('#table_body').append(
+                            '<tr>' +
+                            '<td>' + data[index].id + '</td>' +
+                            '<td>' + data[index].description + '</td>' +
+                            '<td>' + data[index].created + '</td>' +
+                            '<td>' + status + '</td>' +
+                            '<td>' + button + '</td>' +
+                            '<td><i class="btn fas fa-trash-alt fa-lg long-arrow-alt-right" id="' +
+                            data[index].id + '" onclick="deleteTask(' + data[index].id +
+                            ')"></i></td>' +
+                            '</tr>'
+                        )
+                    })
+                })
+            }
+
+        }
+
+        function deleteTask(id) {
+            $.ajax({
+                url: getContextPath() + '/todo',
+                dataType: 'json',
+                contentType: 'json',
+                method: 'POST',
+                data: JSON.stringify({action: 'delete', id: id.toString()}),
+                success: document.getElementById(id).closest('tr').remove()
+            })
+        }
+
+        function addButtons(id) {
+            let buttons =
+                "<button type=\"button\" class=\"btn btn-primary\" onclick=updateStatus('" + id +
+                "')>Done</button>";
+            return buttons.toString();
+        }
+
+        function updateStatus(id) {
+            $.ajax({
+                    url: getContextPath() + '/todo',
+                    dataType: 'json',
+                    contentType: 'json',
+                    method: 'POST',
+                    data: JSON.stringify({action: 'update', id: id}),
+                    statusCode: {
+                        200: function () {
+                            loadData();
+                        }
+                    }
+                }
+            )
+        }
+
+        function newElement() {
+            let inputValue = document.getElementById("task").value;
+            $.ajax({
+                    url: getContextPath() + '/todo',
+                    dataType: 'json',
+                    contentType: 'json',
+                    method: 'POST',
+                    data: JSON.stringify({action: 'add', desc: inputValue})
+                }
+            ).done(function (data) {
+                    $('#table_body').append(
+                        '<tr>' +
+                        '<td>' + data.id + '</td>' +
+                        '<td>' + data.description + '</td>' +
+                        '<td>' + data.created + '</td>' +
+                        '<td>' + newTask + '</td>' +
+                        '<td>' + addButtons(data.id) + '</td>' +
+                        '<td><i class="btn fas fa-trash-alt fa-lg long-arrow-alt-right" id="' +
+                        data.id + '" onclick="deleteTask(' + data.id +
+                        ')"></i></td>' +
+                        '</tr>'
+                    )
+                })
+        }
+
+        function getContextPath() {
+            return location.pathname.substring(0, window.location.pathname.indexOf("/", 2));
+        }
+    </script>
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css"
+          integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ"
+          crossorigin="anonymous">
+</head>
+<body onload="loadData()">
+<div class="container" id="reloadDiv">
+    <form class="form-horizontal">
+        <div class="form-group">
+            <div class="col-sm-8">
+                <h1>TODO List</h1>
+                <input type="text" class="form-control" id="task"
+                       placeholder="Enter task description">
+                <span onclick="newElement()" class="btn btn-primary">Add</span>
+            </div>
+        </div>
+    </form>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="allTasks"
+               value="option1" onclick="loadData()" checked>
+        <label class="form-check-label" for="allTasks">Show all tasks</label>
+    </div>
+    <div class="form-check form-check-inline">
+        <input class="form-check-input" type="radio" name="inlineRadioOptions" id="newTasks"
+               value="option2" onclick="loadData()">
+        <label class="form-check-label" for="newTasks">Show new tasks</label>
+    </div>
+    <table class="table" id="iterable_table">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Description</th>
+            <th>Created</th>
+            <th>Status</th>
+            <th>Complete</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody id="table_body">
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
