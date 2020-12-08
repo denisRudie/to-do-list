@@ -7,9 +7,9 @@ import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
 import ru.job4j.todolist.model.Task;
 
-import java.sql.Timestamp;
 import java.util.Collection;
-import java.util.List;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public class ToDoStore implements Store, AutoCloseable {
     private final static ToDoStore INST = new ToDoStore();
@@ -30,70 +30,68 @@ public class ToDoStore implements Store, AutoCloseable {
         StandardServiceRegistryBuilder.destroy(registry);
     }
 
-    @Override
-    public Collection<Task> getAllTasks() {
-        List<Task> tasks;
+    private <T> T tx(final Function<Session, T> command) {
+        T rsl;
         try (Session session = sf.openSession()) {
             session.beginTransaction();
-            tasks = session.createQuery("from Task ").list();
+            rsl = command.apply(session);
             session.getTransaction().commit();
         }
-        return tasks;
+        return rsl;
+    }
+
+    private void consume(final Consumer<Session> command) {
+        try (Session session = sf.openSession()) {
+            session.beginTransaction();
+            command.accept(session);
+            session.getTransaction().commit();
+        }
+    }
+
+    @Override
+    public Collection<Task> getAllTasks() {
+        return tx(
+                session -> session.createQuery("from Task ").list()
+        );
     }
 
     @Override
     public Collection<Task> getNewTasks() {
-        List<Task> tasks;
-        try (Session session = sf.openSession()) {
-            session.beginTransaction();
-            tasks = session.createQuery("from Task where status = false ").list();
-            session.getTransaction().commit();
-        }
-        return tasks;
+        return tx(
+                session -> session.createQuery("from Task where status = false ").list()
+        );
     }
 
     @Override
     public Task getTaskById(int id) {
-        Task rsl;
-        try (Session session = sf.openSession()) {
-            session.beginTransaction();
-            rsl = session.get(Task.class, id);
-            session.getTransaction().commit();
-        }
-        return rsl;
+        return tx(
+                session -> session.get(Task.class, id)
+        );
     }
 
     @Override
     public int addTask(Task task) {
-        int rsl;
-        try (Session session = sf.openSession()) {
-            session.beginTransaction();
-            rsl = (Integer) session.save(task);
-            session.getTransaction().commit();
-        }
-        return rsl;
+        return tx(
+                session -> (Integer) session.save(task)
+        );
     }
 
     @Override
     public void updateTaskStatus(int id) {
-        try (Session session = sf.openSession()) {
-            session.beginTransaction();
+        consume(session -> {
             Task existing = session.get(Task.class, id);
             existing.setStatus(true);
             session.update(existing);
-            session.getTransaction().commit();
-        }
+        });
     }
 
     @Override
     public void deleteTask(int id) {
-        try (Session session = sf.openSession()) {
-            session.beginTransaction();
+        consume(session -> {
             Task deleting = new Task();
             deleting.setId(id);
             session.delete(deleting);
-            session.getTransaction().commit();
-        }
+        });
     }
 
     public static void main(String[] args) {
