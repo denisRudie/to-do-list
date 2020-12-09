@@ -1,10 +1,12 @@
 package ru.job4j.todolist.servlet;
 
 import com.google.gson.Gson;
+import org.hibernate.Session;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import ru.job4j.todolist.model.Task;
+import ru.job4j.todolist.model.User;
 import ru.job4j.todolist.persistence.ToDoStore;
 
 import javax.servlet.ServletException;
@@ -25,13 +27,14 @@ public class ToDoServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         try (PrintWriter out = resp.getWriter()) {
             String action = req.getParameter("action");
+            User user = (User) req.getSession().getAttribute("user");
 
             switch (action) {
                 case "new" -> {
                     resp.setCharacterEncoding("UTF-8");
                     Collection<Task> tasks =
                             ToDoStore.instOf()
-                                    .getNewTasks().stream()
+                                    .getNewTasksByUser(user).stream()
                                     .sorted(Comparator.comparing(Task::getId))
                                     .collect(Collectors.toList());
                     String jsonOut = new Gson().toJson(tasks);
@@ -42,7 +45,7 @@ public class ToDoServlet extends HttpServlet {
                     resp.setCharacterEncoding("UTF-8");
                     Collection<Task> tasks =
                             ToDoStore.instOf()
-                                    .getAllTasks().stream()
+                                    .getAllTasksByUser(user).stream()
                                     .sorted(Comparator.comparing(Task::getId))
                                     .collect(Collectors.toList());
                     String jsonOut = new Gson().toJson(tasks);
@@ -73,9 +76,11 @@ public class ToDoServlet extends HttpServlet {
 
             switch (action) {
                 case "add" -> {
+                    User u = (User) req.getSession().getAttribute("user");
                     resp.setCharacterEncoding("UTF-8");
                     Task task = new Task();
                     task.setDescription(desc);
+                    task.setOwner(u);
                     task.setCreated(new Timestamp(System.currentTimeMillis()));
                     int newTaskId = ToDoStore.instOf().addTask(task);
                     task.setId(newTaskId);

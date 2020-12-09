@@ -2,6 +2,7 @@ package ru.job4j.todolist.model;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.Objects;
 
 @Entity
 @Table(name = "task")
@@ -12,6 +13,9 @@ public class Task {
     private String description;
     private Timestamp created;
     private boolean status;
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private User owner;
 
     public Task() {
         status = false;
@@ -47,5 +51,26 @@ public class Task {
 
     public void setStatus(boolean status) {
         this.status = status;
+    }
+
+    public User getOwner() {
+        return owner;
+    }
+
+    public void setOwner(User owner) {
+        this.owner = owner;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Task task = (Task) o;
+        return id == task.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }
