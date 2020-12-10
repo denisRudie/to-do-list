@@ -1,10 +1,11 @@
 package ru.job4j.todolist.servlet;
 
 import com.google.gson.Gson;
-import org.hibernate.Session;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import ru.job4j.todolist.model.Task;
 import ru.job4j.todolist.model.User;
 import ru.job4j.todolist.persistence.ToDoStore;
@@ -22,6 +23,8 @@ import java.util.Comparator;
 import java.util.stream.Collectors;
 
 public class ToDoServlet extends HttpServlet {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ToDoServlet.class);
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -55,7 +58,7 @@ public class ToDoServlet extends HttpServlet {
             }
             resp.setStatus(HttpServletResponse.SC_OK);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
     }
 
@@ -93,7 +96,7 @@ public class ToDoServlet extends HttpServlet {
             }
             resp.setStatus(HttpServletResponse.SC_OK);
         } catch (IOException | ParseException e) {
-            e.printStackTrace();
+            LOG.error(e.getMessage(), e);
         }
     }
 }
