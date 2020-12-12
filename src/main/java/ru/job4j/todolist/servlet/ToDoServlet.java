@@ -1,8 +1,6 @@
 package ru.job4j.todolist.servlet;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -14,14 +12,12 @@ import ru.job4j.todolist.model.Task;
 import ru.job4j.todolist.model.User;
 import ru.job4j.todolist.persistence.ToDoStore;
 
-import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.stream.Collectors;
@@ -88,7 +84,7 @@ public class ToDoServlet extends HttpServlet {
             String action = (String) json.get("action");
             String stringId = (String) json.get("id");
             String desc = (String) json.get("desc");
-            
+
             switch (action) {
                 case "add" -> {
                     User u = (User) req.getSession().getAttribute("user");
@@ -96,7 +92,6 @@ public class ToDoServlet extends HttpServlet {
                     Task task = new Task();
                     task.setDescription(desc);
                     task.setOwner(u);
-                    task.setCreated(new Timestamp(System.currentTimeMillis()));
 
                     JSONArray categories = (JSONArray) new JSONParser().parse(
                             json.get("categories").toString());
