@@ -5,6 +5,7 @@ import org.hibernate.SessionFactory;
 import org.hibernate.boot.MetadataSources;
 import org.hibernate.boot.registry.StandardServiceRegistry;
 import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
+import ru.job4j.todolist.model.Category;
 import ru.job4j.todolist.model.Task;
 import ru.job4j.todolist.model.User;
 
@@ -52,16 +53,24 @@ public class ToDoStore implements Store, AutoCloseable {
     @Override
     public Collection<Task> getAllTasksByUser(User user) {
         return tx(
-                session -> session.createQuery("from Task where owner = :user")
+                session -> session.createQuery(
+                        "select distinct t from Task t left join fetch t.categories " +
+                                "where t.owner = :user")
                         .setParameter("user", user)
                         .list()
         );
     }
 
+    public void addCat(Category cat) {
+        consume(session -> session.save(cat));
+    }
+
     @Override
     public Collection<Task> getNewTasksByUser(User user) {
         return tx(
-                session -> session.createQuery("from Task where owner = :user and status = false")
+                session -> session.createQuery(
+                        "select distinct t from Task t left join fetch t.categories " +
+                                "where t.owner = :user and t.status = false")
                         .setParameter("user", user)
                         .list()
         );
@@ -117,6 +126,20 @@ public class ToDoStore implements Store, AutoCloseable {
                         .uniqueResult());
     }
 
+    @Override
+    public Category getCatById(int id) {
+        return tx(
+                session -> session.get(Category.class, id)
+        );
+    }
+
+    @Override
+    public Collection<Category> getAllCategories() {
+        return tx(
+                session -> session.createQuery("from Category ").list()
+        );
+    }
+
     public static void main(String[] args) {
 //        for (int i = 0; i <10 ; i++) {
 //            Task task1 = new Task();
@@ -124,6 +147,7 @@ public class ToDoStore implements Store, AutoCloseable {
 //            task1.setCreated(new Timestamp(System.currentTimeMillis()));
 //            ToDoStore.instOf().addTask(task1);
 //        }
+
 //        User u = ToDoStore.instOf().getUserById(1);
 //        User u = new User();
 //        u.setName("123");
@@ -131,14 +155,23 @@ public class ToDoStore implements Store, AutoCloseable {
 //        ToDoStore.instOf().addUser(u);
 //        ToDoStore.instOf().addUser(u);
 
+//        Category cat1 = new Category();
+//        Category cat2 = new Category();
+//        cat1.setName("cat1");
+//        cat2.setName("cat2");
+//        ToDoStore.instOf().addCat(cat1);
+//        ToDoStore.instOf().addCat(cat2);
+
 //        Task t = new Task();
 //        t.setCreated(new Timestamp(System.currentTimeMillis()));
-//        t.setDescription("test task");
-//        t.setOwner(u);
+//        t.setDescription("0");
+//        t.setOwner(ToDoStore.instOf().getUserById(1));
+//        t.addCat(ToDoStore.instOf().getCatById(1));
+//        t.addCat(ToDoStore.instOf().getCatById(2));
 //        ToDoStore.instOf().addTask(t);
-//        System.out.println(ToDoStore.instOf().getUserByName("123").getPassword());
-//        System.out.println(ToDoStore.instOf().getNewTasks());
-//        ToDoStore.instOf().getAllTasks().forEach(System.out::println);
-//        ToDoStore.instOf().updateTaskStatus(1);
+
+//        ToDoStore.instOf().getAllTasksByUser(
+//                ToDoStore.instOf().getUserById(1))
+//                .forEach(System.out::println);
     }
 }

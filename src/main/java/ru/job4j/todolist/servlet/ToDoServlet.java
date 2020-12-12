@@ -1,11 +1,15 @@
 package ru.job4j.todolist.servlet;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import ru.job4j.todolist.model.Category;
 import ru.job4j.todolist.model.Task;
 import ru.job4j.todolist.model.User;
 import ru.job4j.todolist.persistence.ToDoStore;
@@ -27,7 +31,7 @@ public class ToDoServlet extends HttpServlet {
     private static final Logger LOG = LoggerFactory.getLogger(ToDoServlet.class);
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try (PrintWriter out = resp.getWriter()) {
             String action = req.getParameter("action");
             User user = (User) req.getSession().getAttribute("user");
@@ -55,6 +59,14 @@ public class ToDoServlet extends HttpServlet {
                     out.write(jsonOut);
                     out.flush();
                 }
+                case "categories" -> {
+                    resp.setCharacterEncoding("UTF-8");
+                    Collection<Category> categories =
+                            ToDoStore.instOf().getAllCategories();
+                    String jsonOut = new Gson().toJson(categories);
+                    out.write(jsonOut);
+                    out.flush();
+                }
             }
             resp.setStatus(HttpServletResponse.SC_OK);
         } catch (IOException e) {
@@ -63,7 +75,7 @@ public class ToDoServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try (BufferedReader read = req.getReader();
              PrintWriter out = resp.getWriter()) {
             StringBuilder fullLine = new StringBuilder();
@@ -76,7 +88,7 @@ public class ToDoServlet extends HttpServlet {
             String action = (String) json.get("action");
             String stringId = (String) json.get("id");
             String desc = (String) json.get("desc");
-
+            
             switch (action) {
                 case "add" -> {
                     User u = (User) req.getSession().getAttribute("user");
@@ -85,6 +97,16 @@ public class ToDoServlet extends HttpServlet {
                     task.setDescription(desc);
                     task.setOwner(u);
                     task.setCreated(new Timestamp(System.currentTimeMillis()));
+
+                    JSONArray categories = (JSONArray) new JSONParser().parse(
+                            json.get("categories").toString());
+                    for (Object category : categories) {
+                        JSONObject cat = (JSONObject) category;
+                        int catId = Integer.parseInt(cat.get("id").toString());
+                        Category catFromDb = ToDoStore.instOf().getCatById(catId);
+                        task.addCat(catFromDb);
+                    }
+
                     int newTaskId = ToDoStore.instOf().addTask(task);
                     task.setId(newTaskId);
                     String jsonOut = new Gson().toJson(task);

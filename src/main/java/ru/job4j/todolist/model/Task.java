@@ -2,6 +2,8 @@ package ru.job4j.todolist.model;
 
 import javax.persistence.*;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 @Entity
@@ -16,6 +18,8 @@ public class Task {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User owner;
+    @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    private List<Category> categories = new ArrayList<>();
 
     public Task() {
         status = false;
@@ -59,6 +63,14 @@ public class Task {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public void addCat(Category cat) {
+        this.categories.add(cat);
+    }
+
+    public List<Category> getCats() {
+        return this.categories;
     }
 
     @Override
